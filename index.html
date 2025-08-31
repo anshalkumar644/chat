@@ -27,6 +27,8 @@
             <h2 class="text-2xl font-semibold text-center mb-6 text-gray-700">Mobile Number Daalein</h2>
             <div class="space-y-4">
                 <input type="tel" id="login-phone" placeholder="Mobile Number (e.g., 9876543210)" value="+91" class="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <!-- Recaptcha container -->
+                <div id="recaptcha-container"></div>
                 <button id="send-otp-btn" class="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-colors">OTP Bhejein</button>
             </div>
             <p id="login-message" class="text-center mt-4 text-sm text-red-500"></p>
@@ -35,7 +37,7 @@
         <!-- OTP Verification View -->
         <div id="otp-view" class="page-content hidden">
             <h2 class="text-2xl font-semibold text-center mb-6 text-gray-700">OTP Verify Karein</h2>
-            <p class="text-center text-sm text-gray-500 mb-4">OTP bheja gaya hai. `123456` OTP daalein.</p>
+            <p class="text-center text-sm text-gray-500 mb-4">Aapke number par OTP bheja gaya hai.</p>
             <div class="space-y-4">
                 <input type="tel" id="otp-input" placeholder="OTP Daalein" class="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
                 <button id="verify-otp-btn" class="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition-colors">Verify Karein</button>
