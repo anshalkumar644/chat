@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friend'sBot</title>
+    <!-- Font aur custom CSS link -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Tailwind CSS link jo design ke liye zaroori hai -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div id="app" class="container bg-white rounded-xl shadow-lg p-6 w-full relative">
+        <h1 class="text-3xl font-bold text-center mb-6 text-green-600">Friend'sBot</h1>
+
+        <!-- Loading View -->
+        <div id="loading-view" class="page-content flex flex-col items-center justify-center h-[400px]">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent"></div>
+            <p class="mt-4 text-gray-600">Loading...</p>
+        </div>
+
+        <!-- Login View (Mobile Number) -->
+        <div id="login-view" class="page-content hidden">
+            <h2 class="text-2xl font-semibold text-center mb-6 text-gray-700">Mobile Number Daalein</h2>
+            <div class="space-y-4">
+                <input type="tel" id="login-phone" placeholder="Mobile Number (e.g., 9876543210)" value="+91" class="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button id="send-otp-btn" class="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-colors">OTP Bhejein</button>
+            </div>
+            <p id="login-message" class="text-center mt-4 text-sm text-red-500"></p>
+        </div>
+
+        <!-- OTP Verification View -->
+        <div id="otp-view" class="page-content hidden">
+            <h2 class="text-2xl font-semibold text-center mb-6 text-gray-700">OTP Verify Karein</h2>
+            <p class="text-center text-sm text-gray-500 mb-4">OTP bheja gaya hai. `123456` OTP daalein.</p>
+            <div class="space-y-4">
+                <input type="tel" id="otp-input" placeholder="OTP Daalein" class="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button id="verify-otp-btn" class="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition-colors">Verify Karein</button>
+            </div>
+            <p id="otp-message" class="text-center mt-4 text-sm text-red-500"></p>
+        </div>
+
+        <!-- Main App View -->
+        <div id="main-app-view" class="page-content hidden">
+            <header class="flex justify-between items-center pb-4 border-b border-gray-200 mb-4">
+                <p id="current-username" class="text-xl font-bold text-gray-800"></p>
+                <button id="logout-btn" class="text-sm text-red-500 hover:underline">Logout</button>
+            </header>
+            <nav class="flex justify-around text-center border-b border-gray-200 mb-4">
+                <a href="#" class="tab-link block p-3 w-1/3 text-gray-500 border-b-2 border-transparent" data-tab="profile">Profile</a>
+                <a href="#" class="tab-link block p-3 w-1/3 text-gray-500 border-b-2 border-transparent" data-tab="friends">Friends</a>
+                <a href="#" class="tab-link block p-3 w-1/3 text-gray-500 border-b-2 border-transparent" data-tab="chat-list">Chats</a>
+            </nav>
+            
+            <!-- Profile Tab -->
+            <div id="profile-tab" class="tab-content hidden space-y-4">
+                <div class="flex flex-col items-center">
+                    <img id="profile-photo" src="https://placehold.co/128x128/9CA3AF/FFFFFF?text=Photo" alt="Profile Photo" class="w-32 h-32 rounded-full mb-4 object-cover">
+                    <input type="text" id="profile-name" placeholder="Naam" class="text-lg font-semibold text-center w-full p-2 border-b-2 border-gray-200 focus:outline-none focus:border-green-500">
+                </div>
+                <div>
+                    <label for="profile-status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <textarea id="profile-status" placeholder="Apne baare mein likhein..." rows="3" class="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                </div>
+                <div>
+                    <label for="profile-photo-url" class="block text-sm font-medium text-gray-700 mb-1">Photo URL</label>
+                    <input type="url" id="profile-photo-url" placeholder="Photo URL" class="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+                <button id="save-profile-btn" class="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-colors">Save Karein</button>
+                <p id="profile-message" class="text-center mt-2 text-sm text-green-500"></p>
+            </div>
+            
+            <!-- Friends Tab -->
+            <div id="friends-tab" class="tab-content hidden space-y-4">
+                <h3 class="text-xl font-bold text-gray-800">Dost Add Karein</h3>
+                <div class="flex space-x-2">
+                    <input type="tel" id="friend-phone-input" placeholder="Dost ka Mobile Number (e.g., 9876543210)" value="+91" class="flex-grow p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <button id="add-friend-btn" class="bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-colors">Add Karein</button>
+                </div>
+                <p id="friends-message" class="text-center mt-2 text-sm text-green-500"></p>
+                <h3 class="text-xl font-bold text-gray-800 mt-6">Mere Dost</h3>
+                <ul id="friends-list" class="space-y-2">
+                    <!-- Friends will be displayed here -->
+                </ul>
+            </div>
+
+            <!-- Chat List Tab -->
+            <div id="chat-list-tab" class="tab-content hidden space-y-2">
+                <h3 class="text-xl font-bold text-gray-800">Chats</h3>
+                <ul id="chats-list" class="space-y-2">
+                    <li class="p-4 bg-gray-100 rounded-md">Yahan chats dikhenge.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Chat View -->
+        <div id="chat-view" class="page-content hidden flex flex-col h-[500px]">
+            <header class="flex items-center pb-4 border-b border-gray-200 mb-4">
+                <button id="back-to-chats-btn" class="text-green-600 hover:text-green-800 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <img id="chat-friend-photo" src="https://placehold.co/48x48/9CA3AF/FFFFFF?text=Photo" alt="Friend Photo" class="w-10 h-10 rounded-full object-cover mr-3">
+                <h2 id="chat-friend-name" class="text-xl font-bold text-gray-800"></h2>
+            </header>
+            <div id="messages-container" class="flex-1 overflow-y-auto space-y-4 p-2 custom-scrollbar">
+                <!-- Messages will be displayed here -->
+            </div>
+            <div class="flex items-center mt-4 space-x-2">
+                <input type="text" id="message-input" placeholder="Message likhein..." class="flex-grow p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button id="send-message-btn" class="bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Toast for general messages -->
+        <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-4 py-2 rounded-lg hidden"></div>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
