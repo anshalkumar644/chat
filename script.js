@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/esm-browser/index.js';
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
@@ -28,6 +28,7 @@ const db = getFirestore(app);
 let currentUserData = null;
 let currentFriendData = null;
 let unsubscribeFromChat = null; // for real-time listener
+let confirmationResult = null; // OTP verification ke liye
 
 // UI Elements
 const loadingView = document.getElementById('loading-view');
@@ -87,47 +88,69 @@ function showToast(message) {
 
 const phoneRegex = /^\+91\d{10}$/;
 
-// OTP Handling (Simulated)
-let simulatedOtpSent = false;
-sendOtpBtn.addEventListener('click', () => {
+// OTP Handling
+sendOtpBtn.addEventListener('click', async () => {
     const phone = loginPhoneInput.value;
     if (!phoneRegex.test(phone)) {
         loginMessage.textContent = 'Sahi mobile number daalein (e.g., +919876543210).';
         return;
     }
-    simulatedOtpSent = true;
-    showView('otp-view');
-    otpMessage.textContent = 'OTP bheja gaya hai. `123456` daalein.';
+
+    try {
+        loginMessage.textContent = 'OTP bhej rahe hain...';
+        
+        // Recaptcha verifier chalu karein
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': (response) => {
+                // reCAPTCHA verify hone par
+            },
+            'expired-callback': () => {
+                showToast("reCAPTCHA expire ho gaya. Kripya dobara koshish karein.");
+            }
+        });
+        
+        // OTP bhejein
+        confirmationResult = await signInWithPhoneNumber(auth, phone, window.recaptchaVerifier);
+        window.recaptchaVerifier.render(); // reCAPTCHA render karein
+        showView('otp-view');
+        showToast("OTP aapke phone par bhej diya gaya hai!");
+
+    } catch (error) {
+        console.error("OTP bhej nahi paaya:", error);
+        loginMessage.textContent = 'OTP bhej nahi paaya: ' + error.message;
+    }
 });
 
 verifyOtpBtn.addEventListener('click', async () => {
-    const phone = loginPhoneInput.value;
     const otp = otpInput.value;
-    if (otp === '123456') { // Simulated OTP
-        await handleAuthentication(phone);
-    } else {
+    if (!confirmationResult || otp.length < 6) {
+        otpMessage.textContent = 'OTP sahi se daalein.';
+        return;
+    }
+
+    try {
+        otpMessage.textContent = 'OTP verify kar rahe hain...';
+        const result = await confirmationResult.confirm(otp);
+        const user = result.user;
+        
+        await handleAuthentication(user.uid, user.phoneNumber);
+
+    } catch (error) {
+        console.error("OTP verification failed:", error);
         otpMessage.textContent = 'Galat OTP. Kripya dobara koshish karein.';
     }
 });
 
 // Firebase Authentication and User Data Management
-async function handleAuthentication(phoneNumber) {
-    otpMessage.textContent = 'User ko authenticate kar rahe hain...';
+async function handleAuthentication(uid, phoneNumber) {
     try {
-        let userRef;
-        
-        // Use anonymous auth as a stand-in for custom token auth
-        await signInAnonymously(auth);
-        const uid = auth.currentUser.uid;
-        
-        // Check if user exists with this phone number
         const usersRef = collection(db, 'artifacts', appId, 'users');
-        const q = query(usersRef, where('phoneNumber', '==', phoneNumber));
-        const querySnapshot = await getDocs(q);
+        const userRef = doc(db, 'artifacts', appId, 'users', uid);
+        const docSnap = await getDoc(userRef);
         
-        if (querySnapshot.empty) {
+        if (!docSnap.exists()) {
             // Register new user
-            userRef = doc(db, 'artifacts', appId, 'users', uid);
             const newUserData = {
                 uid,
                 phoneNumber,
@@ -140,10 +163,8 @@ async function handleAuthentication(phoneNumber) {
             currentUserData = newUserData;
             showToast('Naya user register ho gaya!');
         } else {
-            // Log in existing user by updating auth token
-            const userDocSnap = querySnapshot.docs[0];
-            const existingUserUid = userDocSnap.id;
-            currentUserData = userDocSnap.data();
+            // Log in existing user
+            currentUserData = docSnap.data();
             showToast('Login safal raha!');
         }
         
