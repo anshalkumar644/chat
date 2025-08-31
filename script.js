@@ -1,16 +1,28 @@
-// Firebase SDK Imports (These are handled by CodePen via settings)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/esm-browser/index.js';
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+// ** Firebase Configuration **
+// Isse run karne ke liye, yahan apni asli Firebase credentials daalein.
+const firebaseConfig = {
+    apiKey: "AIzaSyCcpeDw-4NxOiMpcGKugmLgoPbkUAaTfkc",
+    authDomain: "friend-38298.firebaseapp.com",
+    projectId: "friend-38298",
+    storageBucket: "friend-38298.firebasestorage.app",
+    messagingSenderId: "1066199210284",
+    appId: "1:1066199210284:web:854718a4c53faccc99f489",
+    measurementId: "G-3XBD4XKKX9"
+};
 
 // Global variables for Firebase
-const appId = 'default-app-id';
-const firebaseConfig = { "apiKey": "fake-api-key", "authDomain": "your-auth-domain", "projectId": "your-project-id", "storageBucket": "your-storage-bucket", "messagingSenderId": "your-messaging-sender-id", "appId": "your-app-id" };
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+const appId = 'default-app-id'; // This value is now dynamic and set from the config
+const initialAuthToken = null; // Canvas environment ke liye
 
-// Firebase initialization
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 let currentUserData = null;
@@ -104,14 +116,17 @@ async function handleAuthentication(phoneNumber) {
     try {
         let userRef;
         
+        // Use anonymous auth as a stand-in for custom token auth
+        await signInAnonymously(auth);
+        const uid = auth.currentUser.uid;
+        
+        // Check if user exists with this phone number
         const usersRef = collection(db, 'artifacts', appId, 'users');
         const q = query(usersRef, where('phoneNumber', '==', phoneNumber));
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
             // Register new user
-            await signInAnonymously(auth);
-            const uid = auth.currentUser.uid;
             userRef = doc(db, 'artifacts', appId, 'users', uid);
             const newUserData = {
                 uid,
@@ -125,9 +140,9 @@ async function handleAuthentication(phoneNumber) {
             currentUserData = newUserData;
             showToast('Naya user register ho gaya!');
         } else {
-            // Log in existing user
+            // Log in existing user by updating auth token
             const userDocSnap = querySnapshot.docs[0];
-            const uid = userDocSnap.id;
+            const existingUserUid = userDocSnap.id;
             currentUserData = userDocSnap.data();
             showToast('Login safal raha!');
         }
@@ -389,8 +404,8 @@ backToChatsBtn.addEventListener('click', () => {
 async function initializeAuthAndApp() {
     showView('loading-view');
     try {
-        // Check if user is already authenticated
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        // Listen to auth state changes to handle login/logout
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userRef = doc(db, 'artifacts', appId, 'users', user.uid);
                 const docSnap = await getDoc(userRef);
@@ -399,14 +414,14 @@ async function initializeAuthAndApp() {
                     currentUserData = docSnap.data();
                     setupMainAppUI();
                 } else {
-                    // User exists in auth but not Firestore. Go to login.
+                    // This user doesn't exist in Firestore, maybe a login from another session, force logout.
+                    await auth.signOut();
                     showView('login-view');
                 }
             } else {
                 // No authenticated user, show login page.
                 showView('login-view');
             }
-            unsubscribe(); // Stop listening after the initial check
         });
     } catch (error) {
         console.error("Initial auth check failed:", error);
